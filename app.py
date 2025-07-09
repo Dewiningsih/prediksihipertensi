@@ -21,8 +21,13 @@ aktivitas = st.number_input("Aktivitas Total (menit/minggu)", min_value=0.0, max
 # Prediksi saat tombol ditekan
 if st.button("Prediksi"):
     input_data = np.array([[usia, berat, lp1, lp2, td, imt, aktivitas]])
-    pred = model.predict(input_data)[0]
-    prob = model.predict_proba(input_data)[0][1]
+    # Prediksi
+    prob = model.predict_proba(user_input)[0][1]
+    pred = model.predict(user_input)[0]
+
+    st.write(f"Probabilitas Risiko Hipertensi: {prob:.4f}")
+    st.write("Prediksi:", "✅ Risiko Hipertensi" if pred == 1 else "❌ Tidak Berisiko")
+
 
     if pred == 1:
         st.error(f"⚠️ Risiko Hipertensi! (Probabilitas: {prob:.2%})")
