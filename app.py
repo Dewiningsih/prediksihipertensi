@@ -3,7 +3,7 @@ import numpy as np
 import joblib
 
 # Load model
-model = joblib.load("model/lgbm_model.pkl")
+model = joblib.load("model_final.pkl")
 
 # Judul
 st.title("Prediksi Risiko Hipertensi")
