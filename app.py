@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 
 # Load model
-model = joblib.load("model_final.pkl")
+model = joblib.load("model_final(1).pkl")
 
 # Judul aplikasi
 st.title("Prediksi Risiko Hipertensi")
