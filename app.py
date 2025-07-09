@@ -2,23 +2,20 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load model
+# Load model dan preprocessor
 model = joblib.load("model_final.pkl")
-
-# Judul aplikasi
-st.title("Prediksi Risiko Hipertensi")
-st.write("Masukkan data berikut untuk memprediksi apakah Anda berisiko hipertensi:")
+preprocessor = joblib.load("preprocessor.pkl")
 
 # Form input
-usia = st.number_input("Usia", min_value=18, max_value=100, value=30)
-berat = st.number_input("Berat Badan", min_value=30.0, max_value=200.0, value=60.0)
-lingkar_pinggang = st.number_input("Lingkar Pinggang", min_value=40.0, max_value=150.0, value=70.0)
-lingkar_pinggang_ulang = st.number_input("Lingkar Pinggang (Ulang)", min_value=40.0, max_value=150.0, value=70.0)
-tekanan_darah = st.number_input("Tekanan Darah", min_value=60, max_value=250, value=120)
-imt = st.number_input("IMT", min_value=10.0, max_value=50.0, value=22.0)
-aktivitas_total = st.number_input("Aktivitas Total", min_value=0.0, max_value=10000.0, value=300.0)
+usia = st.number_input("Usia", 18, 100, 30)
+berat = st.number_input("Berat Badan", 30.0, 200.0, 60.0)
+lingkar_pinggang = st.number_input("Lingkar Pinggang", 40.0, 150.0, 70.0)
+lingkar_pinggang_ulang = st.number_input("Lingkar Pinggang (Ulang)", 40.0, 150.0, 70.0)
+tekanan_darah = st.number_input("Tekanan Darah", 60, 250, 120)
+imt = st.number_input("IMT", 10.0, 50.0, 22.0)
+aktivitas_total = st.number_input("Aktivitas Total", 0.0, 10000.0, 300.0)
 
-# Gabungkan ke dalam DataFrame
+# Buat DataFrame input user
 user_input = pd.DataFrame([{
     "Usia": usia,
     "Berat Badan": berat,
@@ -29,10 +26,10 @@ user_input = pd.DataFrame([{
     "Aktivitas Total": aktivitas_total
 }])
 
-# Prediksi saat tombol ditekan
 if st.button("Prediksi"):
-    prob = model.predict_proba(user_input)[0][1]
-    pred = model.predict(user_input)[0]
+    user_input_prep = preprocessor.transform(user_input)
+    prob = model.predict_proba(user_input_prep)[0][1]
+    pred = model.predict(user_input_prep)[0]
 
     st.write(f"🔍 Probabilitas Risiko Hipertensi: **{prob:.2%}**")
     if pred == 1:
