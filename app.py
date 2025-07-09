@@ -16,7 +16,7 @@ lingkar_pinggang = st.number_input("Lingkar Pinggang", min_value=40.0, max_value
 lingkar_pinggang_ulang = st.number_input("Lingkar Pinggang (Ulang)", min_value=40.0, max_value=150.0, value=70.0)
 tekanan_darah = st.number_input("Tekanan Darah", min_value=60, max_value=250, value=120)
 imt = st.number_input("IMT", min_value=10.0, max_value=50.0, value=22.0)
-aktivitas_total = st.number_input("Aktivitas Total", min_value=0.0, max_value=1000.0, value=300.0)
+aktivitas_total = st.number_input("Aktivitas Total", min_value=0.0, max_value=10000.0, value=300.0)
 
 # Gabungkan ke dalam DataFrame
 user_input = pd.DataFrame([{
