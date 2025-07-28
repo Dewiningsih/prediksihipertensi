@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 
 # Load model
-model = pickle.load(open('model/best_model.pkl', 'rb'))
+model = pickle.load(open('best_model.pkl', 'rb'))
 
 # Konfigurasi halaman
 st.set_page_config(
