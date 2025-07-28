@@ -6,8 +6,8 @@ import pickle
 # ================================
 # 🔹 Load Model dan Scaler
 # ================================
-model = pickle.load(open('model/best_model.pkl', 'rb'))
-scaler = pickle.load(open('model/scaler.pkl', 'rb'))
+model = pickle.load(open('best_model.pkl', 'rb'))
+scaler = pickle.load(open('scaler.pkl', 'rb'))
 
 # ================================
 # 🔹 Set Judul dan Deskripsi
