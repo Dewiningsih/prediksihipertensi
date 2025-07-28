@@ -6,7 +6,7 @@ import pickle
 # ================================
 # 🔹 Load Model dan Scaler
 # ================================
-model = pickle.load(open('model/best_model.pkl', 'rb'))
+model = pickle.load(open('model/best_model (1).pkl', 'rb'))
 scaler = pickle.load(open('model/scaler.pkl', 'rb'))
 
 # ================================
