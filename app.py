@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import joblib
 
-# Import model class yang digunakan saat training!
+from sklearn.base import BaseEstimator, TransformerMixin
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
-
 
 # ---------------------------
 # Custom Transformer
@@ -44,7 +44,7 @@ selected_features = [
 ]
 
 # ---------------------------
-# Sidebar Informasi
+# Sidebar
 # ---------------------------
 st.sidebar.title("📋 Tentang Aplikasi")
 st.sidebar.info("""
@@ -57,8 +57,7 @@ Aplikasi ini memprediksi **risiko hipertensi** menggunakan model *Machine Learni
 
 🩺 Hipertensi = Tekanan darah tinggi yang meningkatkan risiko stroke, serangan jantung, dan gagal ginjal.
 """)
-
-st.sidebar.success("📌 Buat untuk edukasi dan kesehatan preventif.")
+st.sidebar.success("📌 Dibuat untuk edukasi dan kesehatan preventif.")
 
 # ---------------------------
 # Judul Aplikasi
@@ -86,20 +85,20 @@ with st.form("form_prediksi"):
     submitted = st.form_submit_button("🔍 Prediksi")
 
 # ---------------------------
-# Proses Prediksi & Visualisasi
+# Prediksi & Visualisasi
 # ---------------------------
 if submitted:
-    input_data = pd.DataFrame([{
-        "Usia": usia,
-        "Berat Badan": berat,
-        "Tinggi Badan": tinggi,
-        "Lingkar Pinggang": lingkar_pinggang,
-        "Tekanan Darah": tekanan_darah,
-        "IMT": imt,
-        "Aktivitas Total": aktivitas_total
-    }])
-
     try:
+        input_data = pd.DataFrame([{
+            "Usia": usia,
+            "Berat Badan": berat,
+            "Tinggi Badan": tinggi,
+            "Lingkar Pinggang": lingkar_pinggang,
+            "Tekanan Darah": tekanan_darah,
+            "IMT": imt,
+            "Aktivitas Total": aktivitas_total
+        }])
+
         selector = FeatureSelector(selected_features)
         input_transformed = selector.transform(input_data)
 
@@ -113,81 +112,75 @@ if submitted:
         st.markdown(f"- **Risiko Hipertensi:** {risk_label}")
         st.markdown(f"- **Probabilitas:** `{prob:.2f}`")
 
-        
+        col1, col2 = st.columns(2)
 
-col1, col2 = st.columns(2)
+        # Kolom 1
+        with col1:
+            st.markdown("### 🔍 Visualisasi Probabilitas")
+            st.plotly_chart(go.Figure(data=[go.Pie(
+                labels=["Tidak Berisiko", "Berisiko"],
+                values=model.predict_proba(input_transformed)[0],
+                hole=0.5,
+                marker_colors=["green", "red"]
+            )]), use_container_width=True)
 
-# Kolom 1: Pie Chart dan Feature Importance
-with col1:
-    # Visualisasi: Pie Chart
-    st.markdown("### 🔍 Visualisasi Probabilitas")
-    st.plotly_chart(go.Figure(data=[go.Pie(
-        labels=["Tidak Berisiko", "Berisiko"],
-        values=model.predict_proba(input_transformed)[0],
-        hole=0.5,
-        marker_colors=["green", "red"]
-    )]), use_container_width=True)
+            # Feature Importance
+            if hasattr(model, "feature_importances_"):
+                st.markdown("### ⚙️ Pentingnya Fitur")
+                feat_imp_fig = px.bar(
+                    x=selected_features,
+                    y=model.feature_importances_,
+                    title="Feature Importance dari Model",
+                    labels={"x": "Fitur", "y": "Skor"}
+                )
+                st.plotly_chart(feat_imp_fig, use_container_width=True)
 
-    # Feature Importance
-    if hasattr(model, "feature_importances_"):
-        st.markdown("### ⚙️ Pentingnya Fitur")
-        feat_imp_fig = px.bar(
-            x=selected_features,
-            y=model.feature_importances_,
-            title="Feature Importance dari Model",
-            labels={"x": "Fitur", "y": "Skor"}
-        )
-        st.plotly_chart(feat_imp_fig, use_container_width=True)
+        # Kolom 2
+        with col2:
+            st.markdown("### 📏 Perbandingan IMT Anda dengan Kategori WHO")
+            imt_standards = {
+                "Underweight": 18.5,
+                "Normal": 24.9,
+                "Overweight": 29.9,
+                "Obese": 50
+            }
+            fig_imt = px.bar(
+                x=list(imt_standards.keys()),
+                y=list(imt_standards.values()),
+                title="Kategori IMT Berdasarkan WHO",
+                labels={"x": "Kategori", "y": "Nilai IMT"},
+                color=list(imt_standards.keys())
+            )
+            fig_imt.add_scatter(
+                x=["Obese"],
+                y=[imt],
+                mode="markers",
+                marker=dict(size=12, color="black"),
+                name="IMT Anda"
+            )
+            st.plotly_chart(fig_imt, use_container_width=True)
 
-# Kolom 2: IMT dan Aktivitas Fisik
-    with col2:
-        # Visualisasi: IMT
-        st.markdown("### 📏 Perbandingan IMT Anda dengan Kategori WHO")
-        imt_standards = {
-            "Underweight": 18.5,
-            "Normal": 24.9,
-            "Overweight": 29.9,
-            "Obese": 50
-        }
-        fig_imt = px.bar(
-            x=list(imt_standards.keys()),
-            y=list(imt_standards.values()),
-            title="Kategori IMT Berdasarkan WHO",
-            labels={"x": "Kategori", "y": "Nilai IMT"},
-            color=list(imt_standards.keys())
-        )
-        fig_imt.add_scatter(
-            x=["Obese"],
-            y=[imt],
-            mode="markers",
-            marker=dict(size=12, color="black"),
-            name="IMT Anda"
-        )
-        st.plotly_chart(fig_imt, use_container_width=True)
+            st.markdown("### 🏃 Aktivitas Fisik yang Direkomendasikan")
+            categories = ['Rendah', 'Sedang', 'Tinggi']
+            met_values = [500, 1500, 3500]
+            fig_met = px.bar(
+                x=categories,
+                y=met_values,
+                labels={'x': 'Kategori Aktivitas', 'y': 'MET/week'},
+                title='Tingkat Aktivitas Fisik dan Rekomendasi WHO',
+                color=categories,
+                color_discrete_map={"Rendah": "orange", "Sedang": "green", "Tinggi": "blue"}
+            )
+            fig_met.add_scatter(
+                x=["Tinggi"],
+                y=[aktivitas_total],
+                mode="markers",
+                marker=dict(color="red", size=12),
+                name="Aktivitas Anda"
+            )
+            st.plotly_chart(fig_met, use_container_width=True)
 
-        # Visualisasi: Aktivitas Fisik
-        st.markdown("### 🏃 Aktivitas Fisik yang Direkomendasikan")
-        categories = ['Rendah', 'Sedang', 'Tinggi']
-        met_values = [500, 1500, 3500]
-        fig_met = px.bar(
-            x=categories,
-            y=met_values,
-            labels={'x': 'Kategori Aktivitas', 'y': 'MET/week'},
-            title='Tingkat Aktivitas Fisik dan Rekomendasi WHO',
-            color=categories,
-            color_discrete_map={"Rendah": "orange", "Sedang": "green", "Tinggi": "blue"}
-        )
-        fig_met.add_scatter(
-            x=["Tinggi"],
-            y=[aktivitas_total],
-            mode="markers",
-            marker=dict(color="red", size=12),
-            name="Aktivitas Anda"
-        )
-        st.plotly_chart(fig_met, use_container_width=True)
-
-                
-        # Edukasi Kesehatan
+        # Edukasi
         st.markdown("### 💡 Rekomendasi Kesehatan")
         if prediction == 1:
             st.error("⚠️ Anda berisiko hipertensi.")
