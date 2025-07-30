@@ -3,11 +3,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import joblib
-
 from sklearn.base import BaseEstimator, TransformerMixin
 from lightgbm import LGBMClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.calibration import CalibratedClassifierCV
 
 # ---------------------------
 # Custom Transformer
@@ -50,17 +47,12 @@ st.sidebar.title("📋 Tentang Aplikasi")
 st.sidebar.info("""
 Aplikasi ini memprediksi **risiko hipertensi** menggunakan model *Machine Learning* (LightGBM + RFE).
 
-**Fitur yang digunakan:**
-- Usia, Berat & Tinggi Badan
-- Lingkar Pinggang, Tekanan Darah
-- IMT, Aktivitas Fisik (MET/week)
-
-🩺 Hipertensi = Tekanan darah tinggi yang meningkatkan risiko stroke, serangan jantung, dan gagal ginjal.
+🩺 Fitur: Usia, Berat & Tinggi Badan, Lingkar Pinggang, Tekanan Darah, IMT, Aktivitas Fisik.
 """)
 st.sidebar.success("📌 Dibuat untuk edukasi dan kesehatan preventif.")
 
 # ---------------------------
-# Judul Aplikasi
+# Judul
 # ---------------------------
 st.title("🩺 Prediksi Risiko Hipertensi")
 st.markdown("Masukkan data kesehatan Anda di bawah untuk mengetahui apakah Anda berisiko hipertensi.")
@@ -70,7 +62,7 @@ st.markdown("Masukkan data kesehatan Anda di bawah untuk mengetahui apakah Anda 
 # ---------------------------
 st.header("📝 Masukkan Data Anda")
 with st.form("form_prediksi"):
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns([1, 1])
     with col1:
         usia = st.number_input("Usia", min_value=1, max_value=100)
         berat = st.number_input("Berat Badan (kg)", min_value=20.0, max_value=200.0)
@@ -79,7 +71,6 @@ with st.form("form_prediksi"):
         lingkar_pinggang = st.number_input("Lingkar Pinggang (cm)", min_value=40.0, max_value=150.0)
         tekanan_darah = st.number_input("Tekanan Darah (mmHg)", min_value=80.0, max_value=200.0)
         imt = st.number_input("IMT", min_value=10.0, max_value=50.0)
-    with col3:
         aktivitas_total = st.number_input("Aktivitas Total (MET/week)", min_value=0.0, max_value=10000.0)
 
     submitted = st.form_submit_button("🔍 Prediksi")
@@ -112,9 +103,9 @@ if submitted:
         st.markdown(f"- **Risiko Hipertensi:** {risk_label}")
         st.markdown(f"- **Probabilitas:** `{prob:.2f}`")
 
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([1, 1])
 
-        # Kolom 1
+        # Kolom 1 - Pie dan Feature Importance
         with col1:
             st.markdown("### 🔍 Visualisasi Probabilitas")
             st.plotly_chart(go.Figure(data=[go.Pie(
@@ -124,7 +115,6 @@ if submitted:
                 marker_colors=["green", "red"]
             )]), use_container_width=True)
 
-            # Feature Importance
             if hasattr(model, "feature_importances_"):
                 st.markdown("### ⚙️ Pentingnya Fitur")
                 feat_imp_fig = px.bar(
@@ -135,9 +125,9 @@ if submitted:
                 )
                 st.plotly_chart(feat_imp_fig, use_container_width=True)
 
-        # Kolom 2
+        # Kolom 2 - IMT dan Aktivitas
         with col2:
-            st.markdown("### 📏 Perbandingan IMT Anda dengan Kategori WHO")
+            st.markdown("### 📏 Perbandingan IMT dengan WHO")
             imt_standards = {
                 "Underweight": 18.5,
                 "Normal": 24.9,
@@ -160,14 +150,14 @@ if submitted:
             )
             st.plotly_chart(fig_imt, use_container_width=True)
 
-            st.markdown("### 🏃 Aktivitas Fisik yang Direkomendasikan")
+            st.markdown("### 🏃 Aktivitas Fisik Direkomendasikan")
             categories = ['Rendah', 'Sedang', 'Tinggi']
             met_values = [500, 1500, 3500]
             fig_met = px.bar(
                 x=categories,
                 y=met_values,
                 labels={'x': 'Kategori Aktivitas', 'y': 'MET/week'},
-                title='Tingkat Aktivitas Fisik dan Rekomendasi WHO',
+                title='Rekomendasi Aktivitas Fisik WHO',
                 color=categories,
                 color_discrete_map={"Rendah": "orange", "Sedang": "green", "Tinggi": "blue"}
             )
@@ -186,27 +176,26 @@ if submitted:
             st.error("⚠️ Anda berisiko hipertensi.")
             st.markdown("""
             **Langkah Pencegahan:**
-            - Kurangi konsumsi garam dan makanan olahan
-            - Olahraga rutin minimal 150 menit/minggu
-            - Jaga berat badan dan IMT ideal
+            - Kurangi konsumsi garam & makanan olahan
+            - Olahraga rutin ≥150 menit/minggu
+            - Jaga berat badan ideal
             - Kelola stres & tidur cukup
-            - Cek tekanan darah secara berkala
             """)
         else:
             st.success("✅ Anda tidak menunjukkan risiko hipertensi.")
             st.markdown("""
-            **Pertahankan Gaya Hidup Sehat:**
-            - Pola makan bergizi seimbang
-            - Aktivitas fisik teratur
-            - Hindari stres berlebih
+            **Tips Menjaga Kesehatan:**
+            - Makan bergizi seimbang
+            - Rutin aktivitas fisik
+            - Hindari stres berlebihan
             """)
 
         # Referensi
         st.markdown("### 📚 Referensi")
         st.markdown("""
-        - [WHO - Hypertension](https://www.who.int/news-room/fact-sheets/detail/hypertension)
-        - [CDC - Prevent High Blood Pressure](https://www.cdc.gov/bloodpressure/)
-        - [Kemenkes RI - P2PTM](https://p2ptm.kemkes.go.id)
+        - [WHO - Hypertension](https://www.who.int/news-room/fact-sheets/detail/hypertension)  
+        - [CDC - Prevent High Blood Pressure](https://www.cdc.gov/bloodpressure/)  
+        - [Kemenkes RI - P2PTM](https://p2ptm.kemkes.go.id)  
         """)
 
     except Exception as e:
