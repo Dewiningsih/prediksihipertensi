@@ -4,7 +4,7 @@ import joblib
 import matplotlib.pyplot as plt
 
 # Load model
-model = joblib.load("model_lgbm_rfe.pkl")
+model = joblib.load("model_hipertensi_lgbm_rfe.pkl")
 
 # Setup halaman
 st.set_page_config(page_title="Prediksi Risiko Hipertensi", layout="wide")
