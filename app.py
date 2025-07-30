@@ -1,88 +1,125 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import joblib
+from sklearn.base import BaseEstimator, TransformerMixin
 import plotly.graph_objects as go
 
-# Load model pipeline
-model = joblib.load('model_hipertensi_lgbm_rfe.pkl')
+# ---------------------------
+# Custom Transformer
+# ---------------------------
+class FeatureSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, selected_features):
+        self.selected_features = selected_features
 
-# Judul dan sidebar
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return X[self.selected_features]
+
+# ---------------------------
+# Load Model
+# ---------------------------
+@st.cache_resource
+def load_model():
+    try:
+        return joblib.load("model_hipertensi_lgbm_rfe.pkl")
+    except Exception as e:
+        st.error(f"Gagal memuat model: {e}")
+        st.stop()
+
+model = load_model()
+
+# ---------------------------
+# Fitur Terpilih dari RFE
+# ---------------------------
+selected_features = [
+    "Usia",
+    "Berat Badan",
+    "Tinggi Badan",
+    "Lingkar Pinggang",
+    "Tekanan Darah",
+    "IMT",
+    "Aktivitas Total"
+]
+
+# ---------------------------
+# Konfigurasi Halaman
+# ---------------------------
 st.set_page_config(page_title="Prediksi Hipertensi", layout="wide")
-
-st.sidebar.title("ℹ️ Tentang Aplikasi")
-st.sidebar.write("""
-Aplikasi ini memprediksi risiko hipertensi berdasarkan data kesehatan pribadi menggunakan model Machine Learning **LGBM**.
+st.title("🩺 Prediksi Risiko Hipertensi")
+st.markdown("""
+Aplikasi ini memprediksi risiko hipertensi berdasarkan data kesehatan pribadi menggunakan model machine learning.
 """)
-st.sidebar.write("📈 Model dilatih menggunakan fitur: Usia, Berat Badan, Tinggi Badan, Lingkar Pinggang, Tekanan Darah, IMT, dan Aktivitas Total.")
 
-# Formulir input pengguna
-st.title("📝 Masukkan Data Anda")
+# ---------------------------
+# Input Sidebar
+# ---------------------------
+st.sidebar.header("📝 Masukkan Data Anda")
 
-with st.form("form_user"):
-    usia = st.number_input("Usia", min_value=1, max_value=120, value=25)
-    berat = st.number_input("Berat Badan (kg)", min_value=1.0, value=50.0)
-    tinggi = st.number_input("Tinggi Badan (cm)", min_value=50.0, value=170.0)
-    lingkar_pinggang = st.number_input("Lingkar Pinggang (cm)", min_value=30.0, value=70.0)
-    tekanan_darah = st.number_input("Tekanan Darah (mmHg)", min_value=80.0, max_value=200.0, value=117.0)
-    imt = st.number_input("IMT", min_value=10.0, max_value=50.0, value=berat / ((tinggi / 100) ** 2))
-    aktivitas = st.number_input("Aktivitas Total (MET/week)", min_value=0.0, value=240.0)
+usia = st.sidebar.number_input("Usia", min_value=1, max_value=100, step=1)
+berat = st.sidebar.number_input("Berat Badan (kg)", min_value=20.0, max_value=200.0)
+tinggi = st.sidebar.number_input("Tinggi Badan (cm)", min_value=100.0, max_value=250.0)
+lingkar_pinggang = st.sidebar.number_input("Lingkar Pinggang (cm)", min_value=40.0, max_value=150.0)
+tekanan_darah = st.sidebar.number_input("Tekanan Darah (mmHg)", min_value=80.0, max_value=200.0)
+imt = st.sidebar.number_input("IMT", min_value=10.0, max_value=50.0)
+aktivitas_total = st.sidebar.number_input("Aktivitas Total (MET/week)", min_value=0.0, max_value=10000.0)
 
-    submitted = st.form_submit_button("Prediksi")
+if st.sidebar.button("🔍 Prediksi"):
+    input_data = pd.DataFrame([{
+        "Usia": usia,
+        "Berat Badan": berat,
+        "Tinggi Badan": tinggi,
+        "Lingkar Pinggang": lingkar_pinggang,
+        "Tekanan Darah": tekanan_darah,
+        "IMT": imt,
+        "Aktivitas Total": aktivitas_total
+    }])
 
-if submitted:
-    # Buat dataframe untuk prediksi
-    data = pd.DataFrame({
-        'Usia': [usia],
-        'Berat Badan': [berat],
-        'Tinggi Badan': [tinggi],
-        'Lingkar Pinggang': [lingkar_pinggang],
-        'Tekanan Darah': [tekanan_darah],
-        'IMT': [imt],
-        'Aktivitas Total': [aktivitas]
-    })
+    try:
+        selector = FeatureSelector(selected_features)
+        input_transformed = selector.transform(input_data)
 
-    # Prediksi
-    pred_proba = model.predict_proba(data)[0][1]
-    pred_label = model.predict(data)[0]
+        prediction = model.predict(input_transformed)[0]
+        prob = model.predict_proba(input_transformed)[0][1]
 
-    st.header("🩺 Prediksi Risiko Hipertensi")
-    if pred_label == 1:
-        st.markdown("**Risiko Hipertensi: 🟥 Ya**")
-    else:
-        st.markdown("**Risiko Hipertensi: 🟩 Tidak**")
-    st.markdown(f"**Probabilitas: {pred_proba:.2f}**")
+        st.subheader("📊 Hasil Prediksi")
+        st.write(f"- **Risiko Hipertensi:** {'🟥 Ya' if prediction == 1 else '🟩 Tidak'}")
+        st.write(f"- **Probabilitas:** `{prob:.2f}`")
 
-    # Visualisasi probabilitas
-    st.subheader("📊 Visualisasi Probabilitas")
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=pred_proba * 100,
-        gauge={'axis': {'range': [0, 100]},
-               'bar': {'color': "red" if pred_proba >= 0.5 else "green"},
-               'steps': [
-                   {'range': [0, 50], 'color': "lightgreen"},
-                   {'range': [50, 100], 'color': "lightcoral"}]},
-        domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': "Persentase Risiko Hipertensi"}
-    ))
-    st.plotly_chart(fig)
+        # Progress Bar
+        st.markdown("### Visualisasi Probabilitas")
+        st.progress(int(prob * 100))
 
-    # Saran
-    st.subheader("💡 Saran dan Tips")
-    if pred_label == 1:
-        st.markdown("""
-        - 🧂 Kurangi konsumsi garam
-        - 🏃‍♂️ Tingkatkan aktivitas fisik mingguan
-        - 🥗 Terapkan pola makan sehat (DASH diet)
-        - 🚭 Hindari merokok dan alkohol
-        - 🧘 Kelola stres dengan baik
-        """)
-    else:
-        st.markdown("""
-        - ✅ Pertahankan gaya hidup sehat
-        - 🏃 Rutin berolahraga minimal 150 menit per minggu
-        - 🧂 Tetap kontrol asupan garam dan lemak
-        - 🩺 Lakukan pemeriksaan tekanan darah secara berkala
-        """)
+        # Pie Chart
+        fig = go.Figure(data=[go.Pie(
+            labels=['Tidak Berisiko', 'Berisiko'],
+            values=model.predict_proba(input_transformed)[0],
+            hole=0.5,
+            marker_colors=['green', 'red']
+        )])
+        fig.update_layout(title="Distribusi Probabilitas", height=400)
+        st.plotly_chart(fig)
 
+        # Saran
+        st.markdown("### 💡 Saran Kesehatan")
+        if prediction == 1:
+            st.error("⚠️ Anda berisiko mengalami hipertensi.")
+            st.markdown("""
+            **Rekomendasi:**
+            - Kurangi konsumsi garam dan makanan berlemak
+            - Rutin berolahraga minimal 150 menit/minggu
+            - Hindari stres dan cukup tidur
+            - Periksa tekanan darah secara berkala
+            - Hindari rokok dan alkohol
+            """)
+        else:
+            st.success("✅ Anda tidak berisiko hipertensi saat ini.")
+            st.markdown("""
+            **Tetap pertahankan:**
+            - Pola makan sehat & seimbang
+            - Aktivitas fisik teratur
+            - Monitoring kesehatan rutin
+            """)
+    except Exception as e:
+        st.error(f"Terjadi kesalahan saat prediksi: {e}")
