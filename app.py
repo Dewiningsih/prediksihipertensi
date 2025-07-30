@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import joblib
+from sklearn.base import BaseEstimator, TransformerMixin
+
 class FeatureSelector(BaseEstimator, TransformerMixin):
     def __init__(self, selected_features):
         self.selected_features = selected_features
