@@ -1,7 +1,15 @@
 import streamlit as st
 import pandas as pd
 import joblib
+class FeatureSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, selected_features):
+        self.selected_features = selected_features
 
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return X[self.selected_features]
 # Load model
 model = joblib.load("model_hipertensi_lgbm_rfe.pkl")
 
