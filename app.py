@@ -1,11 +1,13 @@
-
 import streamlit as st
 import pandas as pd
-import joblib
-from sklearn.base import BaseEstimator, TransformerMixin
-import plotly.graph_objects as go
 import plotly.express as px
-import numpy as np
+import joblib
+
+# Import model class yang digunakan saat training!
+from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.calibration import CalibratedClassifierCV
+
 
 # ---------------------------
 # Custom Transformer
