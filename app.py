@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 
 # Load pipeline
-with open('pipeline.pkl', 'rb') as file:
+with open('pipeline_model.pkl', 'rb') as file:
     pipeline = pickle.load(file)
 
 # Judul aplikasi
