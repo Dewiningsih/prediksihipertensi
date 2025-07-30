@@ -5,7 +5,7 @@ import joblib
 import plotly.graph_objects as go
 
 # Load model pipeline
-model = joblib.load('model_lgbm_lgbm_rfe.pkl')
+model = joblib.load('model_hipertensi_lgbm_rfe.pkl')
 
 # Judul dan sidebar
 st.set_page_config(page_title="Prediksi Hipertensi", layout="wide")
