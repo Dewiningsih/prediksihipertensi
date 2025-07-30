@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 from sklearn.base import BaseEstimator, TransformerMixin
+import plotly.graph_objects as go  # <- Tambahan untuk visualisasi
 
 # ---------------------------
 # Custom Transformer
@@ -96,5 +97,21 @@ if submitted:
         st.subheader("Hasil Prediksi:")
         st.markdown(f"- **Risiko Hipertensi:** {'🟥 Ya' if prediction == 1 else '🟩 Tidak'}")
         st.markdown(f"- **Probabilitas:** `{prob:.2f}`")
+
+        # ---------------------------
+        # Tambahan Visualisasi
+        # ---------------------------
+        st.markdown("### Visualisasi Probabilitas")
+        st.progress(int(prob * 100))
+
+        fig = go.Figure(data=[go.Pie(
+            labels=['Tidak Berisiko', 'Berisiko'],
+            values=model.predict_proba(input_transformed)[0],
+            hole=0.5,
+            marker_colors=['green', 'red']
+        )])
+        fig.update_layout(title="Distribusi Probabilitas", height=400)
+        st.plotly_chart(fig)
+
     except Exception as e:
         st.error(f"Terjadi kesalahan saat prediksi: {e}")
