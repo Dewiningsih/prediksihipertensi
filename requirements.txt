@@ -1,4 +1,8 @@
-scikit-learn==1.2.2
-numpy
-lightgbm
+streamlit
 pandas
+numpy
+scikit-learn
+lightgbm
+imblearn
+matplotlib
+seaborn
