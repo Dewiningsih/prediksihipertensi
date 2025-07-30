@@ -20,7 +20,11 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
 # ---------------------------
 # Load Model
 # ---------------------------
-model = joblib.load("model_hipertensi_lgbm_rfe.pkl")
+try:
+    model = joblib.load("model_hipertensi_lgbm_rfe.pkl")
+except Exception as e:
+    st.error(f"Gagal memuat model: {e}")
+    st.stop()
 
 # ---------------------------
 # Fitur Terpilih dari RFE
@@ -36,9 +40,10 @@ selected_features = [
 ]
 
 # ---------------------------
-# Judul Halaman
+# Judul Aplikasi
 # ---------------------------
 st.title("Prediksi Risiko Hipertensi")
+st.markdown("Aplikasi ini menggunakan model machine learning untuk memprediksi risiko hipertensi berdasarkan input data pribadi.")
 
 # ---------------------------
 # Form Input
@@ -58,6 +63,7 @@ with st.form("form_prediksi"):
 # Proses Prediksi
 # ---------------------------
 if submitted:
+    # Buat dataframe dari input
     input_data = pd.DataFrame([{
         "Usia": usia,
         "Berat Badan": berat,
@@ -68,15 +74,18 @@ if submitted:
         "Aktivitas Total": aktivitas_total
     }])
 
-    # Transformasi input berdasarkan fitur terpilih
-    selector = FeatureSelector(selected_features)
-    input_transformed = selector.transform(input_data)
+    # Lakukan transformasi fitur
+    try:
+        selector = FeatureSelector(selected_features)
+        input_transformed = selector.transform(input_data)
 
-    # Prediksi
-    prediction = model.predict(input_transformed)[0]
-    prob = model.predict_proba(input_transformed)[0][int(prediction)]
+        # Prediksi
+        prediction = model.predict(input_transformed)[0]
+        prob = model.predict_proba(input_transformed)[0][int(prediction)]
 
-    # Tampilkan hasil
-    st.subheader("Hasil Prediksi:")
-    st.write(f"**Risiko Hipertensi:** {'Ya' if prediction == 1 else 'Tidak'}")
-    st.write(f"**Probabilitas:** {prob:.2f}")
+        # Tampilkan hasil
+        st.subheader("Hasil Prediksi:")
+        st.write(f"**Risiko Hipertensi:** {'Ya' if prediction == 1 else 'Tidak'}")
+        st.write(f"**Probabilitas:** {prob:.2f}")
+    except Exception as e:
+        st.error(f"Terjadi kesalahan saat prediksi: {e}")
