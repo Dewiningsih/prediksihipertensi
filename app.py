@@ -1,35 +1,50 @@
 import streamlit as st
-import numpy as np
-import pickle
+import pandas as pd
+import joblib
 
-# Load pipeline
-with open('pipeline.pkl', 'rb') as file:
-    pipeline = pickle.load(file)
+# Load model
+model = joblib.load("model_hipertensi_lgbm_rfe.pkl")
 
-# Judul aplikasi
-st.title("Prediksi Risiko Hipertensi")
-st.markdown("Model ini memprediksi apakah seseorang berisiko hipertensi berdasarkan beberapa fitur kesehatan.")
+# Judul Aplikasi
+st.title("🩺 Prediksi Risiko Hipertensi")
+st.write("Isi data berikut untuk memprediksi apakah seseorang berisiko mengalami hipertensi.")
 
-# Input dari user
-usia = st.number_input("Usia (tahun)", min_value=1, max_value=100, value=30)
-berat = st.number_input("Berat Badan (kg)", min_value=30, max_value=200, value=70)
-tinggi = st.number_input("Tinggi Badan (cm)", min_value=100, max_value=220, value=170)
-lingkar_pinggang = st.number_input("Lingkar Pinggang (cm)", min_value=50, max_value=150, value=80)
-tekanan_darah = st.number_input("Tekanan Darah (sistolik)", min_value=80, max_value=200, value=120)
-imt = st.number_input("Indeks Massa Tubuh (IMT)", min_value=10.0, max_value=50.0, value=24.2)
-aktivitas_total = st.number_input("Aktivitas Total (jam per minggu)", min_value=0, max_value=100, value=5)
+# Fungsi Input Pengguna
+def user_input_features():
+    usia = st.slider("Usia (tahun)", 10, 100, 40)
+    berat = st.number_input("Berat Badan (kg)", min_value=20.0, max_value=200.0, value=60.0)
+    tinggi = st.number_input("Tinggi Badan (cm)", min_value=100.0, max_value=250.0, value=165.0)
+    lingkar_pinggang = st.number_input("Lingkar Pinggang (cm)", min_value=40.0, max_value=200.0, value=80.0)
+    tekanan_darah = st.slider("Tekanan Darah (mmHg)", 60, 200, 120)
+    imt = st.number_input("Indeks Massa Tubuh (IMT)", min_value=10.0, max_value=50.0, value=22.0)
+    aktivitas = st.slider("Total Aktivitas (menit/hari)", 0, 300, 60)
 
-# Tombol Prediksi
-if st.button("Prediksi"):
-    # Masukkan data ke model
-    input_data = np.array([[usia, berat, tinggi, lingkar_pinggang, tekanan_darah, imt, aktivitas_total]])
-    
-    # Prediksi
-    prediksi = pipeline.predict(input_data)[0]
-    probabilitas = pipeline.predict_proba(input_data)[0][1]
-    
-    # Tampilkan hasil
-    if prediksi == 1:
-        st.error(f"❗Pasien berisiko hipertensi. Probabilitas risiko: {probabilitas:.4f}")
+    # Buat DataFrame
+    data = {
+        "Usia": usia,
+        "Berat Badan": berat,
+        "Tinggi Badan": tinggi,
+        "Lingkar Pinggang": lingkar_pinggang,
+        "Tekanan Darah": tekanan_darah,
+        "IMT": imt,
+        "Aktivitas Total": aktivitas
+    }
+    return pd.DataFrame([data])
+
+# Ambil input dari user
+input_df = user_input_features()
+
+# Tampilkan input
+st.subheader("Data yang Diberikan")
+st.write(input_df)
+
+# Prediksi saat tombol ditekan
+if st.button("Prediksi Risiko Hipertensi"):
+    pred = model.predict(input_df)[0]
+    prob = model.predict_proba(input_df)[0][int(pred)]
+
+    st.subheader("Hasil Prediksi")
+    if pred == 1:
+        st.error(f"⚠️ Risiko Hipertensi! (Probabilitas: {prob:.2f})")
     else:
-        st.success(f"✅ Pasien tidak berisiko hipertensi. Probabilitas risiko: {probabilitas:.4f}")
+        st.success(f"✅ Tidak Berisiko Hipertensi (Probabilitas: {prob:.2f})")
