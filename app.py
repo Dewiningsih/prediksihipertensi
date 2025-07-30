@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import joblib
 
 # Load model
-model = joblib.load("model.pkl")
+model = joblib.load("model_hipertensi_lgbm_rfe.pkl")
 
 # Judul aplikasi
 st.set_page_config(page_title="Prediksi Hipertensi", layout="wide")
