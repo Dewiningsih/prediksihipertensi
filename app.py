@@ -1,58 +1,35 @@
 import streamlit as st
-import pandas as pd
 import numpy as np
 import pickle
 
-# --- Definisi ulang FeatureSelector agar pickle bisa dibuka ---
-from sklearn.base import BaseEstimator, TransformerMixin
+# Load pipeline
+with open('pipeline.pkl', 'rb') as file:
+    pipeline = pickle.load(file)
 
-class FeatureSelector(BaseEstimator, TransformerMixin):
-    def __init__(self, support_mask):
-        self.support_mask = support_mask
-    def fit(self, X, y=None):
-        return self
-    def transform(self, X):
-        return X[:, self.support_mask]
+# Judul aplikasi
+st.title("Prediksi Risiko Hipertensi")
+st.markdown("Model ini memprediksi apakah seseorang berisiko hipertensi berdasarkan beberapa fitur kesehatan.")
 
-# --- Load pipeline ---
-with open("pipeline_model.pkl", "rb") as f:
-    pipeline = pickle.load(f)
+# Input dari user
+usia = st.number_input("Usia (tahun)", min_value=1, max_value=100, value=30)
+berat = st.number_input("Berat Badan (kg)", min_value=30, max_value=200, value=70)
+tinggi = st.number_input("Tinggi Badan (cm)", min_value=100, max_value=220, value=170)
+lingkar_pinggang = st.number_input("Lingkar Pinggang (cm)", min_value=50, max_value=150, value=80)
+tekanan_darah = st.number_input("Tekanan Darah (sistolik)", min_value=80, max_value=200, value=120)
+imt = st.number_input("Indeks Massa Tubuh (IMT)", min_value=10.0, max_value=50.0, value=24.2)
+aktivitas_total = st.number_input("Aktivitas Total (jam per minggu)", min_value=0, max_value=100, value=5)
 
-st.set_page_config(page_title="Prediksi Risiko Hipertensi", layout="centered")
-st.title("🩺 Prediksi Risiko Hipertensi")
-
-st.markdown("Masukkan nilai-nilai berikut:")
-
-# Urutan fitur TERPILIH:
-selected_features = ['Usia', 'Berat Badan', 'Tinggi Badan',
-                     'Lingkar Pinggang', 'Tekanan Darah', 'IMT', 'Aktivitas Total']
-
-# Input user
-user_input = {}
-for feature in selected_features:
-    user_input[feature] = st.number_input(feature, step=1.0)
-
-# Tombol prediksi
+# Tombol Prediksi
 if st.button("Prediksi"):
-    # Buat dataframe dengan kolom lengkap
-    default_values = pipeline.named_steps['scaler'].mean_
-    all_features = pipeline.named_steps['scaler'].feature_names_in_
-
-    input_data = {}
-    for feat in all_features:
-        if feat in selected_features:
-            input_data[feat] = user_input[feat]
-        else:
-            idx = list(all_features).index(feat)
-            input_data[feat] = default_values[idx]
-
-    df_input = pd.DataFrame([input_data])
-
-    pred = pipeline.predict(df_input)[0]
-    prob = pipeline.predict_proba(df_input)[0][1]
-
-    st.write("### Hasil Prediksi:")
-    if pred == 1:
-        st.success(f"⚠️ Berisiko hipertensi! Probabilitas: {prob:.4f}")
+    # Masukkan data ke model
+    input_data = np.array([[usia, berat, tinggi, lingkar_pinggang, tekanan_darah, imt, aktivitas_total]])
+    
+    # Prediksi
+    prediksi = pipeline.predict(input_data)[0]
+    probabilitas = pipeline.predict_proba(input_data)[0][1]
+    
+    # Tampilkan hasil
+    if prediksi == 1:
+        st.error(f"❗Pasien berisiko hipertensi. Probabilitas risiko: {probabilitas:.4f}")
     else:
-        st.info(f"✅ Tidak berisiko hipertensi. Probabilitas: {prob:.4f}")
+        st.success(f"✅ Pasien tidak berisiko hipertensi. Probabilitas risiko: {probabilitas:.4f}")
