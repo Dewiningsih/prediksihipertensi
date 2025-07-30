@@ -40,12 +40,12 @@ selected_features = [
 ]
 
 # ---------------------------
-# Sidebar
+# Sidebar Informasi
 # ---------------------------
 st.sidebar.title("📋 Tentang Aplikasi")
 st.sidebar.info(
     """
-    Aplikasi ini memprediksi risiko hipertensi berdasarkan:
+    Aplikasi ini memprediksi risiko hipertensi berdasarkan fitur berikut:
     
     - Usia
     - Berat & Tinggi Badan
@@ -54,16 +54,30 @@ st.sidebar.info(
     - IMT (Indeks Massa Tubuh)
     - Aktivitas Fisik (MET/week)
 
-    Model yang digunakan: LightGBM + RFE
+    Model: LightGBM dengan Seleksi Fitur RFE
     """
 )
-st.sidebar.markdown("📌 Dibuat dengan ❤️ untuk edukasi dan skripsi")
+st.sidebar.markdown("📌 Dibuat dengan ❤️ untuk edukasi dan penelitian")
+st.sidebar.markdown("---")
+st.sidebar.header("🩺 Apa itu Hipertensi?")
+st.sidebar.markdown("""
+Hipertensi atau tekanan darah tinggi adalah kondisi medis yang meningkatkan risiko penyakit jantung, stroke, dan masalah kesehatan serius lainnya.
+
+**Faktor risiko:** usia, berat badan berlebih, kurang aktivitas fisik, pola makan tidak sehat, stres.
+
+**Pencegahan:** hidup sehat, olahraga rutin, konsumsi makanan seimbang, cek tekanan darah secara berkala.
+""")
 
 # ---------------------------
 # Judul Aplikasi
 # ---------------------------
 st.title("🩺 Prediksi Risiko Hipertensi")
-st.markdown("Aplikasi ini memprediksi risiko hipertensi berdasarkan data kesehatan pribadi menggunakan model machine learning.")
+st.markdown(
+    """
+    Aplikasi ini memprediksi risiko hipertensi berdasarkan data kesehatan pribadi
+    menggunakan model machine learning yang telah dilatih.
+    """
+)
 
 # ---------------------------
 # Form Input
@@ -81,10 +95,9 @@ with st.form("form_prediksi"):
     submitted = st.form_submit_button("🔍 Prediksi")
 
 # ---------------------------
-# Proses Prediksi
+# Proses Prediksi & Visualisasi
 # ---------------------------
 if submitted:
-    # Buat dataframe dari input
     input_data = pd.DataFrame([{
         "Usia": usia,
         "Berat Badan": berat,
@@ -96,15 +109,13 @@ if submitted:
     }])
 
     try:
-        # Transformasi fitur
         selector = FeatureSelector(selected_features)
         input_transformed = selector.transform(input_data)
 
-        # Prediksi
         prediction = model.predict(input_transformed)[0]
         prob = model.predict_proba(input_transformed)[0][int(prediction)]
 
-        # Output hasil
+        # Tampilkan hasil prediksi
         st.header("📊 Hasil Prediksi")
         st.success("Prediksi Berhasil!")
 
@@ -112,12 +123,9 @@ if submitted:
         st.markdown(f"- **Risiko Hipertensi:** {risk_label}")
         st.markdown(f"- **Probabilitas:** `{prob:.2f}`")
 
-        # ---------------------------
-        # Visualisasi 1: Pie Chart
-        # ---------------------------
+        # Visualisasi 1: Pie Chart probabilitas risiko
         st.markdown("### 📈 Distribusi Probabilitas")
         st.progress(int(prob * 100))
-
         pie_fig = go.Figure(data=[go.Pie(
             labels=['Tidak Berisiko', 'Berisiko'],
             values=model.predict_proba(input_transformed)[0],
@@ -127,9 +135,7 @@ if submitted:
         pie_fig.update_layout(title="Risiko Hipertensi", height=400)
         st.plotly_chart(pie_fig, use_container_width=True)
 
-        # ---------------------------
         # Visualisasi 2: IMT vs Kategori WHO
-        # ---------------------------
         st.markdown("### 📏 Indeks Massa Tubuh Anda vs WHO")
         imt_standards = {
             "Underweight": 18.5,
@@ -152,9 +158,7 @@ if submitted:
         )
         st.plotly_chart(fig_imt, use_container_width=True)
 
-        # ---------------------------
-        # Visualisasi 3: Gauge Probabilitas
-        # ---------------------------
+        # Visualisasi 3: Gauge probabilitas risiko
         st.markdown("### 🎯 Skor Risiko Anda")
         fig_gauge = go.Figure(go.Indicator(
             mode="gauge+number",
@@ -171,6 +175,44 @@ if submitted:
             }
         ))
         st.plotly_chart(fig_gauge, use_container_width=True)
+
+        # ---------------------------
+        # Rekomendasi Kesehatan
+        # ---------------------------
+        st.markdown("### 💡 Rekomendasi Kesehatan")
+
+        if prediction == 1:
+            st.error("Hasil menunjukkan Anda berisiko hipertensi.")
+            st.markdown("""
+            **Saran yang Dapat Dilakukan:**
+            - 🚶‍♂️ Tingkatkan aktivitas fisik (150 menit/minggu olahraga sedang)
+            - 🥗 Kurangi konsumsi garam (<5 gram per hari)
+            - 🧂 Hindari makanan olahan tinggi natrium
+            - 🍎 Perbanyak buah, sayur, dan biji-bijian
+            - ⚖️ Jaga berat badan ideal (IMT normal)
+            - 😌 Kurangi stres & cukup tidur
+            - 👨‍⚕️ Lakukan pemeriksaan rutin ke fasilitas kesehatan
+            """)
+        else:
+            st.success("Saat ini Anda tidak menunjukkan risiko hipertensi.")
+            st.markdown("""
+            **Tetap Pertahankan Gaya Hidup Sehat:**
+            - 🥦 Pertahankan pola makan bergizi seimbang
+            - 🏃‍♀️ Rutin berolahraga & aktif bergerak
+            - 🧘 Hindari stres berlebih dan tidur cukup
+            - 📏 Pantau tekanan darah secara berkala
+            """)
+
+        # ---------------------------
+        # Referensi Edukasi
+        # ---------------------------
+        st.markdown("### 📚 Referensi & Sumber Edukasi")
+        st.markdown("""
+        - [WHO - Hypertension](https://www.who.int/news-room/fact-sheets/detail/hypertension)
+        - [CDC - Prevent High Blood Pressure](https://www.cdc.gov/bloodpressure/prevent.htm)
+        - [P2PTM Kemenkes RI](https://p2ptm.kemkes.go.id)
+        - [Mayo Clinic - High blood pressure (hypertension)](https://www.mayoclinic.org/diseases-conditions/high-blood-pressure)
+        """)
 
     except Exception as e:
         st.error(f"Terjadi kesalahan saat prediksi: {e}")
