@@ -4,6 +4,7 @@ import joblib
 from sklearn.base import BaseEstimator, TransformerMixin
 import plotly.graph_objects as go
 import plotly.express as px
+import numpy as np
 
 # ---------------------------
 # Custom Transformer
@@ -43,29 +44,47 @@ selected_features = [
 # Sidebar Informasi
 # ---------------------------
 st.sidebar.title("📋 Tentang Aplikasi")
-st.sidebar.info(
-    """
-    Aplikasi ini memprediksi risiko hipertensi berdasarkan fitur berikut:
-    
-    - Usia
-    - Berat & Tinggi Badan
-    - Lingkar Pinggang
-    - Tekanan Darah
-    - IMT (Indeks Massa Tubuh)
-    - Aktivitas Fisik (MET/week)
-
-    Model: LightGBM dengan Seleksi Fitur RFE
-    """
-)
-st.sidebar.markdown("📌 Dibuat dengan ❤️ untuk edukasi dan penelitian")
-st.sidebar.markdown("---")
-st.sidebar.header("🩺 Apa itu Hipertensi?")
 st.sidebar.markdown("""
-Hipertensi atau tekanan darah tinggi adalah kondisi medis yang meningkatkan risiko penyakit jantung, stroke, dan masalah kesehatan serius lainnya.
+**Aplikasi Prediksi Risiko Hipertensi**  
+Menggunakan machine learning (LightGBM + RFE) untuk memprediksi risiko hipertensi berdasarkan data kesehatan pribadi Anda.
 
-**Faktor risiko:** usia, berat badan berlebih, kurang aktivitas fisik, pola makan tidak sehat, stres.
+### Fitur yang Dipakai:
+- 👶 Usia  
+- ⚖️ Berat & Tinggi Badan  
+- 📏 Lingkar Pinggang  
+- ❤️ Tekanan Darah  
+- 📊 IMT (Indeks Massa Tubuh)  
+- 🏃 Aktivitas Fisik (MET/week)  
 
-**Pencegahan:** hidup sehat, olahraga rutin, konsumsi makanan seimbang, cek tekanan darah secara berkala.
+---
+
+### Apa itu Hipertensi?  
+Hipertensi adalah kondisi tekanan darah tinggi yang dapat meningkatkan risiko penyakit serius seperti:  
+- Penyakit jantung  
+- Stroke  
+- Gangguan ginjal  
+
+---
+
+### Faktor Risiko Umum:  
+- Bertambahnya usia  
+- Berat badan berlebih / obesitas  
+- Kurang aktivitas fisik  
+- Pola makan tinggi garam dan tidak sehat  
+- Stres berkepanjangan  
+
+---
+
+### Cara Pencegahan:  
+- 🍎 Konsumsi makanan sehat, rendah garam  
+- 🚶‍♂️ Rutin berolahraga minimal 150 menit/minggu  
+- ⚖️ Jaga berat badan ideal  
+- 🧘 Kelola stres dengan baik  
+- 🩺 Cek tekanan darah secara rutin  
+
+---
+
+📌 **Dibuat dengan ❤️ untuk edukasi dan penelitian kesehatan.**
 """)
 
 # ---------------------------
@@ -158,7 +177,7 @@ if submitted:
         )
         st.plotly_chart(fig_imt, use_container_width=True)
 
-        # Visualisasi 3: Gauge probabilitas risiko
+        # Visualisasi 3: Gauge Probabilitas Risiko Hipertensi
         st.markdown("### 🎯 Skor Risiko Anda")
         fig_gauge = go.Figure(go.Indicator(
             mode="gauge+number",
@@ -175,6 +194,41 @@ if submitted:
             }
         ))
         st.plotly_chart(fig_gauge, use_container_width=True)
+
+        # Visualisasi 4: Pentingnya Fitur (Feature Importance) - jika tersedia
+        if hasattr(model, 'feature_importances_'):
+            st.markdown("### ⚙️ Pentingnya Fitur dalam Prediksi")
+            feat_imp_fig = px.bar(
+                x=selected_features,
+                y=model.feature_importances_,
+                labels={'x': 'Fitur', 'y': 'Importance'},
+                title='Feature Importance dari Model LightGBM'
+            )
+            st.plotly_chart(feat_imp_fig, use_container_width=True)
+
+        # Visualisasi 5: Tren Tekanan Darah vs Usia (Data Dummy)
+        st.markdown("### 📈 Tren Tekanan Darah vs Usia")
+        age_range = np.arange(20, 80, 5)
+        avg_bp = 80 + (age_range - 20) * 0.8 + np.random.normal(0, 5, len(age_range))
+        df_bp = pd.DataFrame({
+            'Usia': age_range,
+            'Tekanan Darah Rata-rata (mmHg)': avg_bp
+        })
+        fig_bp = px.line(df_bp, x='Usia', y='Tekanan Darah Rata-rata (mmHg)',
+                         title='Tren Tekanan Darah Rata-rata Berdasarkan Usia')
+        st.plotly_chart(fig_bp, use_container_width=True)
+
+        # Visualisasi 6: Aktivitas Fisik vs Risiko (Data Edukasi)
+        st.markdown("### 🏃 Aktivitas Fisik yang Direkomendasikan")
+        categories = ['Rendah', 'Sedang', 'Tinggi']
+        met_values = [500, 1500, 3500]
+        fig_met = px.bar(
+            x=categories,
+            y=met_values,
+            labels={'x': 'Kategori Aktivitas', 'y': 'MET/week'},
+            title='Aktivitas Fisik yang Direkomendasikan untuk Menurunkan Risiko Hipertensi'
+        )
+        st.plotly_chart(fig_met, use_container_width=True)
 
         # ---------------------------
         # Rekomendasi Kesehatan
