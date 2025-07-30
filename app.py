@@ -3,9 +3,8 @@ import numpy as np
 import pickle
 
 # Load pipeline
-with open('pipeline_final.pkl', 'rb') as file:
+with open('pipeline_model.pkl', 'rb') as file:
     pipeline = pickle.load(file)
-
 st.set_page_config(page_title="Prediksi Risiko Hipertensi", layout="centered")
 st.title("Prediksi Risiko Hipertensi")
 
