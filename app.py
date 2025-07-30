@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import joblib
 from sklearn.base import BaseEstimator, TransformerMixin
 
@@ -20,11 +19,15 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
 # ---------------------------
 # Load Model
 # ---------------------------
-try:
-    model = joblib.load("model_hipertensi_lgbm_rfe.pkl")
-except Exception as e:
-    st.error(f"Gagal memuat model: {e}")
-    st.stop()
+@st.cache_resource
+def load_model():
+    try:
+        return joblib.load("model_hipertensi_lgbm_rfe.pkl")
+    except Exception as e:
+        st.error(f"Gagal memuat model: {e}")
+        st.stop()
+
+model = load_model()
 
 # ---------------------------
 # Fitur Terpilih dari RFE
@@ -43,7 +46,12 @@ selected_features = [
 # Judul Aplikasi
 # ---------------------------
 st.title("Prediksi Risiko Hipertensi")
-st.markdown("Aplikasi ini menggunakan model machine learning untuk memprediksi risiko hipertensi berdasarkan input data pribadi.")
+st.markdown(
+    """
+    Aplikasi ini memprediksi risiko hipertensi berdasarkan data input pribadi
+    menggunakan model machine learning yang telah dilatih.
+    """
+)
 
 # ---------------------------
 # Form Input
@@ -74,8 +82,8 @@ if submitted:
         "Aktivitas Total": aktivitas_total
     }])
 
-    # Lakukan transformasi fitur
     try:
+        # Transformasi fitur
         selector = FeatureSelector(selected_features)
         input_transformed = selector.transform(input_data)
 
@@ -84,8 +92,9 @@ if submitted:
         prob = model.predict_proba(input_transformed)[0][int(prediction)]
 
         # Tampilkan hasil
+        st.success("Prediksi Berhasil!")
         st.subheader("Hasil Prediksi:")
-        st.write(f"**Risiko Hipertensi:** {'Ya' if prediction == 1 else 'Tidak'}")
-        st.write(f"**Probabilitas:** {prob:.2f}")
+        st.markdown(f"- **Risiko Hipertensi:** {'🟥 Ya' if prediction == 1 else '🟩 Tidak'}")
+        st.markdown(f"- **Probabilitas:** `{prob:.2f}`")
     except Exception as e:
         st.error(f"Terjadi kesalahan saat prediksi: {e}")
